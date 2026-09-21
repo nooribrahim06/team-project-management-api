@@ -1,0 +1,33 @@
+{
+  "name": "team-project-management-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "prisma contract emit && prisma skills sync || exit 0",
+    "build": "prisma contract emit",
+    "db:emit": "prisma contract emit",
+    "db:format": "prisma contract format",
+    "db:studio": "prisma studio"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nooribrahim06/team-project-management-api.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/nooribrahim06/team-project-management-api/issues"
+  },
+  "homepage": "https://github.com/nooribrahim06/team-project-management-api#readme",
+  "dependencies": {
+    "@prisma/orm-postgres": "^8.0.0-rc.11",
+    "dotenv": "^18.0.1"
+  },
+  "devDependencies": {
+    "prisma": "^8.0.0-rc.15"
+  }
+}
