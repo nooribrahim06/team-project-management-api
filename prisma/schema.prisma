@@ -11,14 +11,108 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
 
 model User {
   id           String   @id @default(uuid()) @db.Uuid
   email        String   @unique
   passwordHash String
 
+  profile      Profile?
+
+  ownedProjects Project[]       @relation("ProjectOwner")
+  memberships   ProjectMember[]
+  assignedTasks Task[]          @relation("TaskAssignee")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("users")
+}
+
+model Profile {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @db.Uuid
+
+  name      String
+  avatarUrl String?
+
+  user User @relation(fields: [userId],  references: [id],  onDelete: Cascade  )
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+model Project {
+  id      String @id @default(uuid()) @db.Uuid
+  ownerId String @db.Uuid
+
+  name        String
+  description String?
+
+  owner User @relation(  "ProjectOwner",  fields: [ownerId],  references: [id]  )
+
+  members ProjectMember[]
+  tasks   Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String @id @default(uuid()) @db.Uuid
+  projectId String @db.Uuid
+  userId    String @db.Uuid
+
+  project Project @relation(  fields: [projectId],  references: [id],  onDelete: Cascade  )
+
+  user User @relation(  fields: [userId],  references: [id],  onDelete: Cascade  )
+
+  joinedAt DateTime @default(now())
+
+  @@unique([projectId, userId])
+
+  @@index([userId])
+  @@map("project_members")
+}
+
+model Task {
+  id           String  @id @default(uuid()) @db.Uuid
+  projectId    String  @db.Uuid
+  assignedToId String? @db.Uuid
+
+  title       String
+  description String?
+
+  status   TaskStatus   @default(TODO)
+  priority TaskPriority @default(MEDIUM)
+
+  project Project @relation(  fields: [projectId],   references: [id],  onDelete: Cascade  )
+
+  assignedTo User? @relation(  "TaskAssignee",  fields: [assignedToId],  references: [id],  onDelete: SetNull  )
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([priority])
+
+  @@map("tasks")
 }
