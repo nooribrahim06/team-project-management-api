@@ -3,12 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "description": "",
+  "main": "src/index.js",
   "engines": {
     "node": ">=22.18.0 <25"
   },
   "scripts": {
-    "build": "prisma generate --config prisma7.config.ts && tsc --noEmit",
-    "typecheck": "tsc --noEmit",
+    "build": "prisma generate --config prisma7.config.ts",
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
     "prisma:generate": "prisma generate --config prisma7.config.ts",
     "prisma:validate": "prisma validate --config prisma7.config.ts",
     "db:migrate": "prisma migrate dev --config prisma7.config.ts",
@@ -31,14 +33,13 @@
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
+    "cookie-parser": "1.4.7",
+    "cors": "2.8.6",
     "dotenv": "18.0.1",
+    "express": "5.2.1",
     "pg": "8.23.0"
   },
   "devDependencies": {
-    "@types/node": "22.20.4",
-    "@types/pg": "8.23.1",
-    "prisma": "7.10.0",
-    "tsx": "4.23.15",
-    "typescript": "5.9.3"
+    "prisma": "7.10.0"
   }
 }
