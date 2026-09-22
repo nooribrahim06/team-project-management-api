@@ -1,0 +1,45 @@
+import { InvalidSchemaError } from "./errorHandling.js";
+
+export function createPublicErrorDetails(error) {
+  return error.issues.flatMap((issue) => {
+    if (issue.code === "unrecognized_keys" && Array.isArray(issue.keys)) {
+      return issue.keys.map((field) => ({
+        field,
+        message: "This field is not allowed.",
+      }));
+    }
+
+    return [
+      {
+        field: issue.path.join(".") || "data",
+        message: issue.message,
+      },
+    ];
+  });
+}
+
+export function validateBody(schema) {
+  return function (req, res, next) {
+    const result = schema.safeParse(req.body);
+
+    if (!result.success) {
+      throw new InvalidSchemaError(createPublicErrorDetails(result.error));
+    }
+
+    req.validatedBody = result.data;
+    next();
+  };
+}
+
+export function validateParams(schema) {
+  return function (req, res, next) {
+    const result = schema.safeParse(req.params);
+
+    if (!result.success) {
+      throw new InvalidSchemaError(createPublicErrorDetails(result.error));
+    }
+
+    req.validatedParams = result.data;
+    next();
+  };
+}
