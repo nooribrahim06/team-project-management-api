@@ -1,0 +1,19 @@
+import express from "express";
+import { authenticateUser } from "../../middlewares/auth.middleware.js";
+import {
+  validateBody,
+  validateParams,
+} from "../../middlewares/validatebody.js";
+import * as controllers from "./project.controller.js";
+import * as projectValidation from "./project.validation.js";
+
+export const projectRoutes = express.Router();
+
+projectRoutes.use(express.json({ limit: "100kb" }));
+
+projectRoutes.post(
+  "/",
+  authenticateUser,
+  validateBody(projectValidation.createProjectSchema),
+  controllers.createProjectController,
+);
