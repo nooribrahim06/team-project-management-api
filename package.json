@@ -1,15 +1,20 @@
 {
   "name": "team-project-management-api",
   "version": "1.0.0",
+  "private": true,
   "description": "",
-  "main": "index.js",
+  "engines": {
+    "node": ">=22.18.0 <25"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "prisma contract emit && prisma skills sync || exit 0",
-    "build": "prisma contract emit",
-    "db:emit": "prisma contract emit",
-    "db:format": "prisma contract format",
-    "db:studio": "prisma studio"
+    "build": "prisma generate --config prisma7.config.ts && tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "prisma:generate": "prisma generate --config prisma7.config.ts",
+    "prisma:validate": "prisma validate --config prisma7.config.ts",
+    "db:migrate": "prisma migrate dev --config prisma7.config.ts",
+    "db:deploy": "prisma migrate deploy --config prisma7.config.ts",
+    "db:studio": "prisma studio --config prisma7.config.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -18,16 +23,22 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/nooribrahim06/team-project-management-api/issues"
   },
   "homepage": "https://github.com/nooribrahim06/team-project-management-api#readme",
   "dependencies": {
-    "@prisma/orm-postgres": "^8.0.0-rc.11",
-    "dotenv": "^18.0.1"
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "dotenv": "18.0.1",
+    "pg": "8.23.0"
   },
   "devDependencies": {
-    "prisma": "^8.0.0-rc.15"
+    "@types/node": "22.20.4",
+    "@types/pg": "8.23.1",
+    "prisma": "7.10.0",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
   }
 }
