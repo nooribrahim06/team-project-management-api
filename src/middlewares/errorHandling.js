@@ -34,6 +34,20 @@ export class ProjectAccessDeniedError extends AppError {
   }
 }
 
+export class TaskNotFoundError extends AppError {
+  constructor(message = "Task was not found.") {
+    super(message, 404, "TASK_NOT_FOUND");
+  }
+}
+
+export class InvalidTaskAssigneeError extends AppError {
+  constructor(
+    message = "The assignee must be the project owner or a project member.",
+  ) {
+    super(message, 400, "INVALID_TASK_ASSIGNEE");
+  }
+}
+
 export class RouteNotFoundError extends AppError {
   constructor(method, path) {
     super(
