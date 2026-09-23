@@ -30,3 +30,18 @@ projectRoutes.get(
   validateParams(projectValidation.projectIdParamSchema),
   controllers.getProjectByIdController,
 );
+
+projectRoutes.patch(
+  "/:projectId",
+  authenticateUser,
+  validateParams(projectValidation.projectIdParamSchema),
+  validateBody(projectValidation.updateProjectSchema),
+  controllers.updateProjectController,
+);
+
+projectRoutes.delete(
+  "/:projectId",
+  authenticateUser,
+  validateParams(projectValidation.projectIdParamSchema),
+  controllers.deleteProjectController,
+);

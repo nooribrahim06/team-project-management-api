@@ -30,3 +30,33 @@ export async function getProjectById(userId, projectId) {
   return project;
 }
 
+
+export async function updateProject(ownerId, projectId, data) {
+  const project = await getOwnedProject(projectId, ownerId);
+  return projectsRepo.updateProject(project.id, data);
+}
+
+export async function deleteProject(ownerId, projectId) {
+  const project = await getOwnedProject(projectId, ownerId);
+  await projectsRepo.deleteProject(project.id);
+}
+
+async function getExistingProject(projectId) {
+  const project = await projectsRepo.findProjectById(projectId);
+
+  if (!project) {
+    throw new ProjectNotFoundError();
+  }
+
+  return project;
+}
+
+async function getOwnedProject(projectId, ownerId) {
+  const project = await getExistingProject(projectId);
+
+  if (project.ownerId !== ownerId) {
+    throw new ProjectOwnerRequiredError();
+  }
+
+  return project;
+}

@@ -27,3 +27,23 @@ export async function getProjectByIdController(req, res) {
 
   return privateResponse(res, 200, result);
 }
+
+export async function updateProjectController(req, res) {
+  const result = await projectService.updateProject(
+    req.user.id,
+    req.validatedParams.projectId,
+    req.validatedBody,
+  );
+
+  return privateResponse(res, 200, result);
+}
+
+export async function deleteProjectController(req, res) {
+  await projectService.deleteProject(
+    req.user.id,
+    req.validatedParams.projectId,
+  );
+
+  res.set("Cache-Control", "no-store");
+  return res.status(204).send();
+}
