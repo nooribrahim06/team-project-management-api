@@ -19,6 +19,10 @@ export async function getAllTasks(userId, projectId) {
   return tasksRepo.findAllTasksByProjectId(projectId);
 }
 
+export function getMyTasks(userId) {
+  return tasksRepo.findTasksAssignedToUser(userId);
+}
+
 export async function getTaskById(userId, projectId, taskId) {
   await getAccessibleProject(projectId, userId);
   return getExistingTask(taskId, projectId);

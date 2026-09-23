@@ -8,6 +8,9 @@ import * as controllers from "./task.controller.js";
 import * as taskValidation from "./task.validation.js";
 
 export const taskRoutes = express.Router({ mergeParams: true });
+export const myTaskRoutes = express.Router();
+
+myTaskRoutes.get("/", authenticateUser, controllers.getMyTasksController);
 
 taskRoutes.use(express.json({ limit: "100kb" }), authenticateUser);
 

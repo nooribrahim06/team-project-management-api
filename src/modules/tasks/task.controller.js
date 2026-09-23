@@ -24,6 +24,11 @@ export async function getAllTasksController(req, res) {
   return privateResponse(res, 200, result);
 }
 
+export async function getMyTasksController(req, res) {
+  const result = await taskService.getMyTasks(req.user.id);
+  return privateResponse(res, 200, result);
+}
+
 export async function getTaskByIdController(req, res) {
   const result = await taskService.getTaskById(
     req.user.id,

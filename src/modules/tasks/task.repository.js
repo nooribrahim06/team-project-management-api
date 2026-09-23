@@ -29,6 +29,27 @@ export async function findAllTasksByProjectId(projectId, db = prisma) {
   }
 }
 
+export async function findTasksAssignedToUser(userId, db = prisma) {
+  try {
+    return await db.task.findMany({
+      where: { assignedToId: userId },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch {
+    throw new DatabaseError(
+      "Database error occurred while finding the user's tasks.",
+    );
+  }
+}
+
 export async function findTaskByIdInProject(
   taskId,
   projectId,
