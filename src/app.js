@@ -3,12 +3,14 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import { RouteNotFoundError } from "./middlewares/errorHandling.js";
 import { projectRoutes } from "./modules/projects/project.routes.js";
+import { taskRoutes } from "./modules/tasks/task.routes.js";
 
 export const app = express();
 app.use(cors());
 app.use(cookieParser());
 
 app.use("/api/projects", projectRoutes);
+app.use("/api/projects/:projectId/tasks", taskRoutes);
 
 app.use((req, res, next) => {
   next(new RouteNotFoundError(req.method, req.originalUrl));
