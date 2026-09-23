@@ -17,3 +17,16 @@ projectRoutes.post(
   validateBody(projectValidation.createProjectSchema),
   controllers.createProjectController,
 );
+
+projectRoutes.get(
+  "/",
+  authenticateUser,
+  controllers.getAllProjectsController,
+);
+
+projectRoutes.get(
+  "/:projectId",
+  authenticateUser,
+  validateParams(projectValidation.projectIdParamSchema),
+  controllers.getProjectByIdController,
+);

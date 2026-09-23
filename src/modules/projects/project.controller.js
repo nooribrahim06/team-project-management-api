@@ -13,3 +13,17 @@ export async function createProjectController(req, res) {
 
   return privateResponse(res, 201, result);
 }
+
+export async function getAllProjectsController(req, res) {
+  const result = await projectService.getAllProjects(req.user.id);
+  return privateResponse(res, 200, result);
+}
+
+export async function getProjectByIdController(req, res) {
+  const result = await projectService.getProjectById(
+    req.user.id,
+    req.validatedParams.projectId,
+  );
+
+  return privateResponse(res, 200, result);
+}

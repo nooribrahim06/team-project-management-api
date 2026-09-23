@@ -28,6 +28,12 @@ export class ProjectOwnerRequiredError extends AppError {
   }
 }
 
+export class ProjectAccessDeniedError extends AppError {
+  constructor(message = "You do not have access to this project.") {
+    super(message, 403, "PROJECT_ACCESS_DENIED");
+  }
+}
+
 export class RouteNotFoundError extends AppError {
   constructor(method, path) {
     super(
