@@ -69,6 +69,23 @@ export async function findProjectById(projectId, db = prisma) {
   }
 }
 
+export async function findProjectMember(projectId, userId, db = prisma) {
+  try {
+    return await db.projectMember.findUnique({
+      where: {
+        projectId_userId: {
+          projectId,
+          userId,
+        },
+      },
+    });
+  } catch {
+    throw new DatabaseError(
+      "Database error occurred while finding the project member.",
+    );
+  }
+}
+
 export async function updateProject(projectId, data, db = prisma) {
   try {
     return await db.project.update({
