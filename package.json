@@ -15,6 +15,7 @@
     "prisma:validate": "prisma validate --config prisma7.config.ts",
     "db:migrate": "prisma migrate dev --config prisma7.config.ts",
     "db:deploy": "prisma migrate deploy --config prisma7.config.ts",
+    "db:seed": "node prisma/seed.js",
     "db:studio": "prisma studio --config prisma7.config.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -37,7 +38,8 @@
     "cors": "2.8.6",
     "dotenv": "18.0.1",
     "express": "5.2.1",
-    "pg": "8.23.0"
+    "pg": "8.23.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "prisma": "7.10.0"
