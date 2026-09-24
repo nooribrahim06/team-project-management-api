@@ -1,7 +1,10 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import { env } from "./config/env.js";
 import { RouteNotFoundError } from "./middlewares/errorHandling.js";
+import { apiRateLimiter } from "./middlewares/rateLimiter.js";
+import { authRoutes } from "./modules/auth/auth.routes.js";
 import { projectRoutes } from "./modules/projects/project.routes.js";
 import {
   myTaskRoutes,
@@ -9,9 +12,27 @@ import {
 } from "./modules/tasks/task.routes.js";
 
 export const app = express();
-app.use(cors());
-app.use(cookieParser());
+export default app;
+app.set("trust proxy", env.NODE_ENV === "production" ? 1 : false);
 
+app.use(
+  cors({
+    origin(requestOrigin, callback) {
+      if (!requestOrigin || requestOrigin === env.FRONTEND_URL) {
+        return callback(null, true);
+      }
+
+      return callback(null, false);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
+app.use(cookieParser());
+app.use("/api", apiRateLimiter);
+
+app.use("/api/auth", authRoutes);
 app.use("/api/projects/:projectId/tasks", taskRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/tasks", myTaskRoutes);
@@ -29,7 +50,10 @@ app.use((error, req, res, next) => {
   const tooLarge = error.type === "entity.too.large";
   const isOperational = error.isOperational === true;
 
-  if (!isOperational || error.statusCode >= 500) {
+  if (
+    env.NODE_ENV !== "test" &&
+    (!isOperational || error.statusCode >= 500)
+  ) {
     console.error(error);
   }
 
