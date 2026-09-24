@@ -12,8 +12,8 @@ export const app = express();
 app.use(cors());
 app.use(cookieParser());
 
-app.use("/api/projects", projectRoutes);
 app.use("/api/projects/:projectId/tasks", taskRoutes);
+app.use("/api/projects", projectRoutes);
 app.use("/api/tasks", myTaskRoutes);
 
 app.use((req, res, next) => {
