@@ -63,3 +63,65 @@ export class DatabaseError extends AppError {
     super(message, 500, "DATABASE_ERROR");
   }
 }
+
+export class DuplicateUserError extends AppError {
+  constructor() {
+    super(
+      "A user with that email already exists.",
+      409,
+      "USER_ALREADY_EXISTS",
+    );
+  }
+}
+
+export class InvalidVerificationTokenError extends AppError {
+  constructor(message = "Verification link is invalid or has expired.") {
+    super(message, 400, "INVALID_VERIFICATION_TOKEN");
+  }
+}
+
+export class InvalidCredentialsError extends AppError {
+  constructor(message = "Invalid email or password.") {
+    super(message, 401, "INVALID_CREDENTIALS");
+  }
+}
+
+export class InvalidAccessTokenError extends AppError {
+  constructor(message = "Authentication required.") {
+    super(message, 401, "INVALID_ACCESS_TOKEN");
+  }
+}
+
+export class InvalidRefreshTokenError extends AppError {
+  constructor(message = "Invalid or expired session.") {
+    super(message, 401, "INVALID_REFRESH_TOKEN");
+  }
+}
+
+export class InvalidSessionError extends AppError {
+  constructor(message = "Invalid or expired session.") {
+    super(message, 401, "INVALID_SESSION");
+  }
+}
+
+export class RefreshTokenReuseError extends AppError {
+  constructor(
+    message = "Refresh token reuse was detected. The session has been revoked.",
+  ) {
+    super(message, 401, "REFRESH_TOKEN_REUSE_DETECTED");
+  }
+}
+
+export class RefreshTokenRaceError extends AppError {
+  constructor(
+    message = "The session was refreshed by another request. Please retry.",
+  ) {
+    super(message, 409, "REFRESH_TOKEN_ALREADY_ROTATED");
+  }
+}
+
+export class EmailSendError extends AppError {
+  constructor(message = "The verification email could not be sent.") {
+    super(message, 500, "EMAIL_SEND_FAILED");
+  }
+}
