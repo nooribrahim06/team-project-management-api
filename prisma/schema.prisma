@@ -10,6 +10,7 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
 enum TaskStatus {
   TODO
   IN_PROGRESS
@@ -23,20 +24,71 @@ enum TaskPriority {
 }
 
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  email        String   @unique
+  id           String @id @default(uuid()) @db.Uuid
+  email        String @unique
   passwordHash String
 
-  profile      Profile?
+  emailVerified        Boolean   @default(false)
+  verifyToken          String?   @unique @db.VarChar(64)
+  verifyTokenExpiresAt DateTime?
+
+  profile Profile?
 
   ownedProjects Project[]       @relation("ProjectOwner")
   memberships   ProjectMember[]
   assignedTasks Task[]          @relation("TaskAssignee")
+  authSessions  AuthSession[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("users")
+}
+
+model AuthSession {
+  id       String @id @default(uuid()) @db.Uuid
+  userId   String @db.Uuid
+  
+
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+
+  userAgent String? @db.VarChar(512)
+  ipHash    String? @db.VarChar(64)
+
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokens RefreshToken[]
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("auth_sessions")
+}
+
+model RefreshToken {
+  id        String @id @default(uuid()) @db.Uuid
+  sessionId String @db.Uuid
+
+  tokenHash String @unique @db.VarChar(64)
+
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  consumedAt DateTime?
+  revokedAt  DateTime?
+
+  replacedByTokenId String? @unique @db.Uuid
+
+  session AuthSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  replacedBy RefreshToken? @relation("RefreshTokenRotation", fields: [replacedByTokenId], references: [id], onDelete: SetNull)
+  replaces   RefreshToken? @relation("RefreshTokenRotation")
+
+  @@index([sessionId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("refresh_tokens")
 }
 
 model Profile {
@@ -46,7 +98,7 @@ model Profile {
   name      String
   avatarUrl String?
 
-  user User @relation(fields: [userId],  references: [id],  onDelete: Cascade  )
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -61,7 +113,7 @@ model Project {
   name        String
   description String?
 
-  owner User @relation(  "ProjectOwner",  fields: [ownerId],  references: [id]  )
+  owner User @relation("ProjectOwner", fields: [ownerId], references: [id])
 
   members ProjectMember[]
   tasks   Task[]
@@ -78,14 +130,13 @@ model ProjectMember {
   projectId String @db.Uuid
   userId    String @db.Uuid
 
-  project Project @relation(  fields: [projectId],  references: [id],  onDelete: Cascade  )
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  user User @relation(  fields: [userId],  references: [id],  onDelete: Cascade  )
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   joinedAt DateTime @default(now())
 
   @@unique([projectId, userId])
-
   @@index([userId])
   @@map("project_members")
 }
@@ -101,9 +152,9 @@ model Task {
   status   TaskStatus   @default(TODO)
   priority TaskPriority @default(MEDIUM)
 
-  project Project @relation(  fields: [projectId],   references: [id],  onDelete: Cascade  )
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  assignedTo User? @relation(  "TaskAssignee",  fields: [assignedToId],  references: [id],  onDelete: SetNull  )
+  assignedTo User? @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -112,6 +163,5 @@ model Task {
   @@index([assignedToId])
   @@index([status])
   @@index([priority])
-
   @@map("tasks")
 }
