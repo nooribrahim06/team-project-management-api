@@ -17,7 +17,7 @@
     "db:deploy": "prisma migrate deploy --config prisma7.config.ts",
     "db:seed": "node prisma/seed.js",
     "db:studio": "prisma studio --config prisma7.config.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test test/auth.contract.test.js"
   },
   "repository": {
     "type": "git",
@@ -34,14 +34,21 @@
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
+    "bcryptjs": "^3.0.3",
     "cookie-parser": "1.4.7",
     "cors": "2.8.6",
     "dotenv": "18.0.1",
     "express": "5.2.1",
+    "express-rate-limit": "^8.6.2",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^10.0.10",
     "pg": "8.23.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
     "prisma": "7.10.0"
+  },
+  "overrides": {
+    "deepmerge-ts": "8.0.2"
   }
 }
