@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticateUser } from "../../middlewares/auth.middleware.js";
+import { authenticateToken } from "../../middlewares/auth.middleware.js";
 import {
   validateBody,
   validateParams,
@@ -13,27 +13,27 @@ projectRoutes.use(express.json({ limit: "100kb" }));
 
 projectRoutes.post(
   "/",
-  authenticateUser,
+  authenticateToken,
   validateBody(projectValidation.createProjectSchema),
   controllers.createProjectController,
 );
 
 projectRoutes.get(
   "/",
-  authenticateUser,
+  authenticateToken,
   controllers.getAllProjectsController,
 );
 
 projectRoutes.get(
   "/:projectId",
-  authenticateUser,
+  authenticateToken,
   validateParams(projectValidation.projectIdParamSchema),
   controllers.getProjectByIdController,
 );
 
 projectRoutes.patch(
   "/:projectId",
-  authenticateUser,
+  authenticateToken,
   validateParams(projectValidation.projectIdParamSchema),
   validateBody(projectValidation.updateProjectSchema),
   controllers.updateProjectController,
@@ -41,7 +41,7 @@ projectRoutes.patch(
 
 projectRoutes.delete(
   "/:projectId",
-  authenticateUser,
+  authenticateToken,
   validateParams(projectValidation.projectIdParamSchema),
   controllers.deleteProjectController,
 );
