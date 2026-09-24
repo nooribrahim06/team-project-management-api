@@ -45,8 +45,14 @@ export async function createUser(
     const target = Array.isArray(error.meta?.target)
       ? error.meta.target
       : [error.meta?.target];
+    const constraint =
+      error.meta?.driverAdapterError?.cause?.constraint?.index;
 
-    if (error.code === "P2002" && target.some((field) => field === "email")) {
+    const duplicateEmail =
+      target.some((field) => field === "email") ||
+      constraint === "users_email_key";
+
+    if (error.code === "P2002" && duplicateEmail) {
       throw new DuplicateUserError();
     }
 

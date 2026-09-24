@@ -113,13 +113,15 @@ All six seeded accounts are verified and use this development-only password:
 Password123!
 ```
 
-For example, log in with `level1@example.com`. Send the returned access token on protected requests:
+For example, log in with `level1@example.com`. The two real email addresses used for the recorded signup demonstration are intentionally not seeded. Send the returned access token on protected requests:
 
 ```text
 Authorization: Bearer <access-token>
 ```
 
 The refresh token is not returned in JSON. It is stored in an `httpOnly` cookie and sent to the refresh/logout endpoints by clients that include credentials.
+
+The ready-to-run requests in `api.rest` test authentication plus complete Project and Task CRUD. Run them from top to bottom with the VS Code REST Client extension because later requests reuse IDs, tokens, and cookies created by earlier requests.
 
 ## Scripts
 
