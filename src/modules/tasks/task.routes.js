@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticateUser } from "../../middlewares/auth.middleware.js";
+import { authenticateToken } from "../../middlewares/auth.middleware.js";
 import {
   validateBody,
   validateParams,
@@ -10,9 +10,9 @@ import * as taskValidation from "./task.validation.js";
 export const taskRoutes = express.Router({ mergeParams: true });
 export const myTaskRoutes = express.Router();
 
-myTaskRoutes.get("/", authenticateUser, controllers.getMyTasksController);
+myTaskRoutes.get("/", authenticateToken, controllers.getMyTasksController);
 
-taskRoutes.use(express.json({ limit: "100kb" }), authenticateUser);
+taskRoutes.use(express.json({ limit: "100kb" }), authenticateToken);
 
 taskRoutes.post(
   "/",
