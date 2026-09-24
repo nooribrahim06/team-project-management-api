@@ -10,6 +10,10 @@ This project is the backend technical task for Cairo University Racing Team, sea
 - PostgreSQL
 - Prisma ORM 7
 - Zod validation
+- bcrypt password hashing
+- JWT access tokens and opaque refresh tokens
+- Nodemailer verification emails
+- Express rate limiting
 - JavaScript ES modules
 
 ## Current scope
@@ -25,9 +29,19 @@ The current implementation completes the Level 1 API requirements:
 - Routes, controllers, services, repositories, validation, and middleware separated by responsibility
 - Repeatable sample-data seed
 
-It also includes some work beyond Level 1: project access checks, owner-only update/delete operations, project-member task assignment checks, and centralized error handling.
+It also implements the Level 2 authentication and data-integrity foundation:
 
-Real registration, login, password hashing, and token authentication are intentionally not implemented yet. They belong to Level 2.
+- Registration with bcrypt password hashing
+- Email verification and resend flow
+- Login with generic credential errors
+- Short-lived JWT access tokens
+- Database-backed sessions
+- Hashed, rotating refresh tokens stored in `httpOnly` cookies
+- Refresh-token reuse detection and session revocation
+- Logout, logout-all, and current-user endpoints
+- Protected project and task routes
+- Authentication rate limits
+- Project access, owner-only mutations, and valid task-assignee checks
 
 ## Requirements
 
@@ -53,13 +67,23 @@ Real registration, login, password hashing, and token authentication are intenti
    Copy-Item .env.example .env
    ```
 
-4. Create an empty PostgreSQL database and set `DATABASE_URL` in `.env`:
+4. Create an empty PostgreSQL database and configure `.env`:
 
    ```env
    HOST=localhost
    PORT=3000
    DATABASE_URL="postgresql://postgres:your_password@localhost:5432/team_project_management"
+   FRONTEND_URL="http://localhost:5173"
+   ACCESS_TOKEN_SECRET="your-generated-base64url-secret"
    ```
+
+   Generate a secure access-token secret with:
+
+   ```bash
+   node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
+   ```
+
+   `EMAIL_USER` and `EMAIL_APP_PASSWORD` are optional locally and required in production. Without them, development signup returns a verification URL and prints it to the server console.
 
 5. Apply the committed migrations:
 
@@ -81,15 +105,21 @@ Real registration, login, password hashing, and token authentication are intenti
 
 The API is available at `http://localhost:3000` by default.
 
-## Development user
+## Seeded login
 
-Level 1 does not require authentication. Until real authentication is added, the authentication middleware treats every request as this seeded development user:
+All six seeded accounts are verified and use this development-only password:
 
 ```text
-00000000-0000-4000-8000-000000000001
+Password123!
 ```
 
-No authentication header is currently required. This temporary behavior must be replaced by registration, login, and token verification for Level 2.
+For example, log in with `level1@example.com`. Send the returned access token on protected requests:
+
+```text
+Authorization: Bearer <access-token>
+```
+
+The refresh token is not returned in JSON. It is stored in an `httpOnly` cookie and sent to the refresh/logout endpoints by clients that include credentials.
 
 ## Scripts
 
@@ -104,6 +134,7 @@ No authentication header is currently required. This temporary behavior must be 
 | `npm run db:deploy` | Apply existing migrations in deployment or a clean environment |
 | `npm run db:seed` | Insert or refresh the sample records |
 | `npm run db:studio` | Open Prisma Studio |
+| `npm test` | Run the automated authentication contract tests |
 
 The seed is safe to rerun because it uses fixed IDs and `upsert`. It inserts 6 users, 6 profiles, 4 projects, 10 project memberships, and 20 tasks without deleting unrelated records.
 
@@ -140,11 +171,81 @@ Validation and application errors use this structure:
 
 Delete endpoints return `204 No Content` after a successful deletion.
 
+## Authentication endpoints
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/api/auth/signup` | Create an unverified account and profile |
+| `POST` | `/api/auth/verify-email` | Verify an account using the emailed token |
+| `POST` | `/api/auth/resend-verification` | Replace and resend a verification token |
+| `POST` | `/api/auth/login` | Create a session, set the refresh cookie, and return an access token |
+| `POST` | `/api/auth/refresh` | Rotate the refresh token and return a new access token |
+| `POST` | `/api/auth/logout` | Revoke the current session and clear the cookie |
+| `POST` | `/api/auth/logout-all` | Revoke all sessions for the account and clear the cookie |
+| `GET` | `/api/auth/me` | Return the authenticated user |
+
+### How authentication works
+
+1. Signup creates the user with a bcrypt password hash and sends an email-verification link.
+2. The user verifies the account with the token from that link.
+3. Login returns a short-lived access token and sets a longer-lived refresh token as an `httpOnly` cookie.
+4. Protected endpoints receive the access token through `Authorization: Bearer <access-token>`.
+5. When the access token expires, `/api/auth/refresh` checks the cookie, replaces the old refresh token, and returns a new access token. The user does not need to log in again.
+6. Logout revokes the current session. Logout-all revokes every session belonging to the user.
+
+The raw refresh token is never stored in the database. Only its SHA-256 hash is stored. Every successful refresh consumes the old token and creates a new one. Reusing an old token outside the short race-condition grace period revokes the session.
+
+Signup body:
+
+```json
+{
+  "email": "driver@example.com",
+  "name": "Race Driver",
+  "password": "Password123!"
+}
+```
+
+Login body:
+
+```json
+{
+  "email": "driver@example.com",
+  "password": "Password123!"
+}
+```
+
+Verify-email body:
+
+```json
+{
+  "token": "64-character-token-from-the-verification-link"
+}
+```
+
+Resend-verification body:
+
+```json
+{
+  "email": "driver@example.com"
+}
+```
+
+Login and refresh responses return the access token inside `data.accessToken`. Access tokens expire after 15 minutes by default. Refresh tokens expire after 7 days and cannot outlive their 30-day session.
+
+Browser clients must allow cookies when calling login, refresh, logout, or logout-all. For example:
+
+```js
+fetch("http://localhost:3000/api/auth/refresh", {
+  method: "POST",
+  credentials: "include",
+});
+```
+
 ## Project endpoints
 
 | Method | Endpoint | Description | Access rule |
 | --- | --- | --- | --- |
-| `POST` | `/api/projects` | Create a project | Development user |
+| `POST` | `/api/projects` | Create a project | Authenticated user |
 | `GET` | `/api/projects` | List projects owned by or joined by the user | Owner or member |
 | `GET` | `/api/projects/:projectId` | Get one project | Owner or member |
 | `PATCH` | `/api/projects/:projectId` | Update a project | Owner only |
@@ -170,7 +271,7 @@ Create-project body:
 | `GET` | `/api/projects/:projectId/tasks/:taskId` | Get one task | Owner or member |
 | `PATCH` | `/api/projects/:projectId/tasks/:taskId` | Update a task | Owner only |
 | `DELETE` | `/api/projects/:projectId/tasks/:taskId` | Delete a task | Owner only |
-| `GET` | `/api/tasks` | List all tasks assigned to the current user across projects | Development user |
+| `GET` | `/api/tasks` | List all tasks assigned to the current user across projects | Authenticated user |
 
 Create-task body:
 
@@ -199,6 +300,8 @@ The main relationships are:
 
 ```text
 User 1 --- 0..1 Profile
+User 1 --- many AuthSession
+AuthSession 1 --- many RefreshToken
 User 1 --- many Project (owner)
 User many --- many Project (through ProjectMember)
 Project 1 --- many Task
@@ -208,6 +311,9 @@ User 1 --- many Task (optional assignee)
 Important integrity rules:
 
 - User email addresses are unique.
+- Passwords are stored only as bcrypt hashes.
+- Verification and refresh tokens are stored only as SHA-256 hashes.
+- Deleting a user cascades to their sessions and refresh tokens.
 - A user can appear only once in a project's membership list.
 - Deleting a project cascades to its tasks and memberships.
 - Deleting a user sets their task assignments to `null`.
@@ -222,11 +328,15 @@ prisma/
   schema.prisma        Database schema
   seed.js              Seed entry point
 src/
+  config/              Validated environment configuration
+  emails/              Verification email delivery
   lib/                 Shared Prisma client
   middlewares/         Authentication, validation, and errors
   modules/
+    auth/              Auth routes, tokens, service, and session repositories
     projects/          Project routes, controller, service, repository, validation
     tasks/             Task routes, controller, service, repository, validation
+    users/             User persistence
   app.js               Express application and route registration
   index.js             Database connection and server entry point
 ```
@@ -241,11 +351,13 @@ Route -> validation/authentication middleware -> controller -> service -> reposi
 
 The API is not deployed yet. Follow the local setup instructions above to run it.
 
-For deployment, use a persistent Node.js host such as Render or Railway with a managed PostgreSQL database. Configure `DATABASE_URL`, run `npm run build`, apply migrations with `npm run db:deploy`, and start the service with `npm start`. Do not run `prisma migrate dev` in production.
+For deployment, use a persistent Node.js host such as Render or Railway with a managed PostgreSQL database. Configure all production environment variables from `.env.example`, including a unique `ACCESS_TOKEN_SECRET`, email credentials, the HTTPS frontend URL, and `DATABASE_URL`. Run `npm run build`, apply migrations with `npm run db:deploy`, and start the service with `npm start`. Do not run `prisma migrate dev` in production.
 
 ## Assumptions
 
-- Level 1 requests run as one fixed seeded user because real authentication is a Level 2 requirement.
+- All project and task endpoints require a valid access token.
+- Seeded accounts are already email-verified for immediate demonstration.
+- New accounts must verify their email before login.
 - A project owner has access even when they do not also have a `ProjectMember` row.
 - Project members can create and view project tasks.
 - Only the project owner can update or delete projects and tasks in the current implementation.
